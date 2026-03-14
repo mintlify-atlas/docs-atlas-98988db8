@@ -1,0 +1,73 @@
+{
+  "projectType": "general",
+  "projectName": "Observer Pattern Order System",
+  "projectDescription": "A Java implementation demonstrating the Observer design pattern for order event notifications in an e-commerce system",
+  "theme": "mint",
+  "primaryColor": "#0D9488",
+  "lightColor": "#14B8A6",
+  "darkColor": "#0F766E",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "introduction",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Core Concepts",
+        "pages": [
+          "concepts/observer-pattern",
+          "concepts/architecture"
+        ]
+      },
+      {
+        "group": "Implementation Guide",
+        "pages": [
+          "guide/domain-model",
+          "guide/subject-interface",
+          "guide/observer-interface",
+          "guide/implementations"
+        ]
+      },
+      {
+        "group": "API Reference",
+        "pages": [
+          "api/order",
+          "api/order-subject",
+          "api/order-observer",
+          "api/order-event-publisher",
+          "api/order-service",
+          "api/observers"
+        ]
+      },
+      {
+        "group": "Examples",
+        "pages": [
+          "examples/basic-usage",
+          "examples/adding-observers",
+          "examples/use-cases"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Clean implementation of Observer design pattern",
+    "Decoupled order event notification system",
+    "Multiple observer types (Email, Log, Statistics)",
+    "Extensible architecture for adding new observers",
+    "Simple dependency injection via constructor"
+  ],
+  "publicApiSurface": [
+    "OrderSubject.addObserver(OrderObserver)",
+    "OrderSubject.removeObserver(OrderObserver)",
+    "OrderSubject.notifyOrderShipped(Order)",
+    "OrderObserver.onOrderShipped(Order)",
+    "OrderService.shipOrder(Order)",
+    "Order(String id)",
+    "EmailOrderObserver",
+    "LogOrderObserver",
+    "StatsOrderObserver"
+  ]
+}
