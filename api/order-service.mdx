@@ -1,0 +1,177 @@
+---
+title: 'OrderService'
+description: 'Service class that manages order shipments and triggers observer notifications'
+---
+
+## Overview
+
+The `OrderService` class encapsulates the business logic for shipping orders. It works with the Observer pattern by using an `OrderSubject` to automatically notify all registered observers when an order is shipped.
+
+## Package
+
+```java
+patron_observer.marzo_2026_2
+```
+
+## Class Definition
+
+```java
+public class OrderService
+```
+
+## Fields
+
+<ResponseField name="orderSubject" type="OrderSubject">
+  Reference to the subject interface that manages observers and handles event notifications. This field is `final` and set through constructor injection.
+</ResponseField>
+
+## Constructors
+
+### OrderService(OrderSubject orderSubject)
+
+Creates a new order service with the specified subject for publishing events.
+
+<ParamField path="orderSubject" type="OrderSubject" required>
+  The subject implementation (typically `OrderEventPublisher`) that will handle observer notifications
+</ParamField>
+
+```java
+OrderSubject publisher = new OrderEventPublisher();
+OrderService orderService = new OrderService(publisher);
+```
+
+<Info>
+  This constructor uses dependency injection, allowing you to inject any implementation of `OrderSubject`. This promotes loose coupling and testability.
+</Info>
+
+## Methods
+
+### shipOrder(Order order)
+
+Executes the business logic to ship an order and notifies all observers.
+
+<ParamField path="order" type="Order" required>
+  The order to be shipped
+</ParamField>
+
+**Returns:** `void`
+
+**Behavior:**
+1. Updates the order's status to "ENVIADO"
+2. Prints a confirmation message to the console
+3. Notifies all registered observers via the `orderSubject`
+
+```java
+Order order = new Order("ORD-001");
+orderService.shipOrder(order);
+
+// Console output:
+// OrderService: Pedido ORD-001 marcado como ENVIADO.
+// [EMAIL] Pedido ORD-001 enviado. Mandando email al cliente.
+// [LOG] Pedido ORD-001 ha cambiado a estado: ENVIADO
+// [STATS] Contador de pedidos enviados: 1
+```
+
+## Implementation Details
+
+### shipOrder() Method Flow
+
+```java
+public void shipOrder(Order order) {
+    // 1. Update order status
+    order.setStatus("ENVIADO");
+    
+    // 2. Log the shipment
+    System.out.println("OrderService: Pedido " + order.getId() + " marcado como ENVIADO.");
+    
+    // 3. Notify all observers
+    orderSubject.notifyOrderShipped(order);
+}
+```
+
+<Note>
+  The `shipOrder()` method automatically triggers all registered observers through the `notifyOrderShipped()` call. This ensures that email notifications, logging, and statistics tracking all happen automatically when an order is shipped.
+</Note>
+
+## Complete Usage Example
+
+```java
+// 1. Create the event publisher (subject)
+OrderSubject publisher = new OrderEventPublisher();
+
+// 2. Create and register observers
+OrderObserver emailObserver = new EmailOrderObserver();
+OrderObserver logObserver = new LogOrderObserver();
+OrderObserver statsObserver = new StatsOrderObserver();
+
+publisher.addObserver(emailObserver);
+publisher.addObserver(logObserver);
+publisher.addObserver(statsObserver);
+
+// 3. Create the order service
+OrderService orderService = new OrderService(publisher);
+
+// 4. Create and ship orders
+Order order1 = new Order("ORD-001");
+orderService.shipOrder(order1);
+
+Order order2 = new Order("ORD-002");
+orderService.shipOrder(order2);
+
+// Each shipOrder() call will:
+// - Update the order status
+// - Print a confirmation
+// - Notify all 3 observers
+```
+
+## Benefits of the Design
+
+### Separation of Concerns
+The service focuses on business logic (shipping orders) while delegating notification responsibilities to the Observer pattern.
+
+### Extensibility
+New observers can be added without modifying the `OrderService` class:
+
+```java
+// Add a new SMS observer without changing OrderService
+OrderObserver smsObserver = new SmsOrderObserver();
+publisher.addObserver(smsObserver);
+
+// All future shipments will notify the SMS observer too
+orderService.shipOrder(order);
+```
+
+### Testability
+Dependency injection makes testing easier:
+
+```java
+// Mock the subject for testing
+OrderSubject mockSubject = mock(OrderSubject.class);
+OrderService service = new OrderService(mockSubject);
+
+Order order = new Order("TEST-001");
+service.shipOrder(order);
+
+// Verify the notification was triggered
+verify(mockSubject).notifyOrderShipped(order);
+```
+
+<Info>
+  This class demonstrates the Open/Closed Principle: it's open for extension (add new observers) but closed for modification (no changes needed to add new notification types).
+</Info>
+
+## Design Pattern Integration
+
+The `OrderService` acts as the **Client** in the Observer pattern:
+
+- **Uses** the `OrderSubject` interface to trigger notifications
+- **Doesn't know** about specific observer implementations
+- **Remains unchanged** when new observers are added or removed
+- **Focuses** on core business logic while observers handle cross-cutting concerns
+
+## Related Components
+
+- [OrderSubject](/api/order-subject) - Interface used to trigger notifications
+- [OrderEventPublisher](/api/order-event-publisher) - Typical implementation injected into this service
+- [Order](/api/order) - Domain model that this service operates on
+- [Observers](/api/observers) - Various observers that react to shipment events

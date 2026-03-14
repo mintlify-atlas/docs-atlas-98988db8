@@ -1,0 +1,276 @@
+---
+title: 'Observer Implementations'
+description: 'Concrete observer classes that react to order shipment events'
+---
+
+## Overview
+
+This page documents the three concrete implementations of the `OrderObserver` interface. Each observer provides a different response to order shipment events: sending emails, logging status changes, and tracking statistics.
+
+## EmailOrderObserver
+
+Sends email notifications to customers when their orders are shipped.
+
+### Package
+
+```java
+patron_observer.marzo_2026_2
+```
+
+### Class Definition
+
+```java
+public class EmailOrderObserver implements OrderObserver
+```
+
+### Methods
+
+#### onOrderShipped(Order order)
+
+Sends an email notification when an order is shipped.
+
+<ParamField path="order" type="Order" required>
+  The order that has been shipped
+</ParamField>
+
+**Returns:** `void`
+
+**Implementation:** Prints an email notification message to the console.
+
+```java
+@Override
+public void onOrderShipped(Order order) {
+    System.out.println("[EMAIL] Pedido " + order.getId() + " enviado. Mandando email al cliente.");
+}
+```
+
+### Usage Example
+
+```java
+OrderSubject publisher = new OrderEventPublisher();
+OrderObserver emailObserver = new EmailOrderObserver();
+publisher.addObserver(emailObserver);
+
+Order order = new Order("ORD-001");
+order.setStatus("ENVIADO");
+publisher.notifyOrderShipped(order);
+
+// Output: [EMAIL] Pedido ORD-001 enviado. Mandando email al cliente.
+```
+
+<Info>
+  In a production system, this would integrate with an email service provider (e.g., SendGrid, AWS SES) to send actual emails to customers.
+</Info>
+
+---
+
+## LogOrderObserver
+
+Records order status changes to the system log.
+
+### Package
+
+```java
+patron_observer.marzo_2026_2
+```
+
+### Class Definition
+
+```java
+public class LogOrderObserver implements OrderObserver
+```
+
+### Methods
+
+#### onOrderShipped(Order order)
+
+Logs the order status change when an order is shipped.
+
+<ParamField path="order" type="Order" required>
+  The order that has been shipped
+</ParamField>
+
+**Returns:** `void`
+
+**Implementation:** Prints a log message with the order ID and current status.
+
+```java
+@Override
+public void onOrderShipped(Order order) {
+    System.out.println("[LOG] Pedido " + order.getId() + " ha cambiado a estado: " + order.getStatus());
+}
+```
+
+### Usage Example
+
+```java
+OrderSubject publisher = new OrderEventPublisher();
+OrderObserver logObserver = new LogOrderObserver();
+publisher.addObserver(logObserver);
+
+Order order = new Order("ORD-001");
+order.setStatus("ENVIADO");
+publisher.notifyOrderShipped(order);
+
+// Output: [LOG] Pedido ORD-001 ha cambiado a estado: ENVIADO
+```
+
+<Info>
+  In a production system, this would typically integrate with a logging framework (e.g., Log4j, SLF4J) to write structured logs to files or log aggregation services.
+</Info>
+
+---
+
+## StatsOrderObserver
+
+Tracks statistics about shipped orders.
+
+### Package
+
+```java
+patron_observer.marzo_2026_2
+```
+
+### Class Definition
+
+```java
+public class StatsOrderObserver implements OrderObserver
+```
+
+### Fields
+
+<ResponseField name="totalEnviados" type="int" default="0">
+  Counter that tracks the total number of orders that have been shipped. Increments with each notification.
+</ResponseField>
+
+### Methods
+
+#### onOrderShipped(Order order)
+
+Increments the shipment counter and displays the current total.
+
+<ParamField path="order" type="Order" required>
+  The order that has been shipped
+</ParamField>
+
+**Returns:** `void`
+
+**Implementation:** Increments `totalEnviados` counter and prints the current count.
+
+```java
+@Override
+public void onOrderShipped(Order order) {
+    totalEnviados++;
+    System.out.println("[STATS] Contador de pedidos enviados: " + totalEnviados);
+}
+```
+
+### Usage Example
+
+```java
+OrderSubject publisher = new OrderEventPublisher();
+StatsOrderObserver statsObserver = new StatsOrderObserver();
+publisher.addObserver(statsObserver);
+
+Order order1 = new Order("ORD-001");
+order1.setStatus("ENVIADO");
+publisher.notifyOrderShipped(order1);
+// Output: [STATS] Contador de pedidos enviados: 1
+
+Order order2 = new Order("ORD-002");
+order2.setStatus("ENVIADO");
+publisher.notifyOrderShipped(order2);
+// Output: [STATS] Contador de pedidos enviados: 2
+```
+
+<Note>
+  The `totalEnviados` counter maintains state across multiple notifications. Each instance of `StatsOrderObserver` has its own independent counter.
+</Note>
+
+<Info>
+  In a production system, this observer might store statistics in a database or send metrics to a monitoring system (e.g., Prometheus, CloudWatch).
+</Info>
+
+---
+
+## Complete Example with All Observers
+
+```java
+public class AppMain {
+    public static void main(String[] args) {
+        // 1. Create the subject (event publisher)
+        OrderSubject publisher = new OrderEventPublisher();
+        
+        // 2. Create all observer instances
+        OrderObserver emailObserver = new EmailOrderObserver();
+        OrderObserver logObserver = new LogOrderObserver();
+        OrderObserver statsObserver = new StatsOrderObserver();
+        
+        // 3. Register all observers
+        publisher.addObserver(emailObserver);
+        publisher.addObserver(logObserver);
+        publisher.addObserver(statsObserver);
+        
+        // 4. Create the order service
+        OrderService orderService = new OrderService(publisher);
+        
+        // 5. Ship an order
+        Order order = new Order("ORD-001");
+        orderService.shipOrder(order);
+        
+        // Console output:
+        // OrderService: Pedido ORD-001 marcado como ENVIADO.
+        // [EMAIL] Pedido ORD-001 enviado. Mandando email al cliente.
+        // [LOG] Pedido ORD-001 ha cambiado a estado: ENVIADO
+        // [STATS] Contador de pedidos enviados: 1
+    }
+}
+```
+
+## Observer Execution Order
+
+Observers are notified in the order they were registered:
+
+1. **EmailOrderObserver** - First registered, first notified
+2. **LogOrderObserver** - Second registered, second notified
+3. **StatsOrderObserver** - Third registered, third notified
+
+<Note>
+  The notification is synchronous, meaning each observer completes its `onOrderShipped()` method before the next observer is called.
+</Note>
+
+## Creating Custom Observers
+
+You can create additional observers by implementing the `OrderObserver` interface:
+
+```java
+public class SmsOrderObserver implements OrderObserver {
+    @Override
+    public void onOrderShipped(Order order) {
+        System.out.println("[SMS] Sending SMS notification for order: " + order.getId());
+        // Add SMS sending logic here
+    }
+}
+
+public class InventoryOrderObserver implements OrderObserver {
+    @Override
+    public void onOrderShipped(Order order) {
+        System.out.println("[INVENTORY] Updating inventory for order: " + order.getId());
+        // Add inventory update logic here
+    }
+}
+```
+
+Then register them with the publisher:
+
+```java
+publisher.addObserver(new SmsOrderObserver());
+publisher.addObserver(new InventoryOrderObserver());
+```
+
+## Related Components
+
+- [OrderObserver](/api/order-observer) - Interface that these classes implement
+- [OrderEventPublisher](/api/order-event-publisher) - Manages and notifies observers
+- [OrderService](/api/order-service) - Triggers observer notifications when shipping orders
+- [Order](/api/order) - Domain model passed to observer callbacks

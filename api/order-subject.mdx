@@ -1,0 +1,121 @@
+---
+title: 'OrderSubject'
+description: 'Subject interface for the Observer pattern in the order notification system'
+---
+
+## Overview
+
+The `OrderSubject` interface defines the contract for the Subject role in the Observer pattern. It allows observers to subscribe to order events and handles notification distribution when orders are shipped.
+
+## Package
+
+```java
+patron_observer.marzo_2026_2
+```
+
+## Interface Definition
+
+```java
+public interface OrderSubject
+```
+
+## Methods
+
+### addObserver(OrderObserver observer)
+
+Registers an observer to receive notifications about order events.
+
+<ParamField path="observer" type="OrderObserver" required>
+  The observer instance to be added to the notification list
+</ParamField>
+
+**Returns:** `void`
+
+```java
+OrderSubject publisher = new OrderEventPublisher();
+OrderObserver emailObserver = new EmailOrderObserver();
+publisher.addObserver(emailObserver);
+```
+
+### removeObserver(OrderObserver observer)
+
+Unregisters an observer from receiving notifications about order events.
+
+<ParamField path="observer" type="OrderObserver" required>
+  The observer instance to be removed from the notification list
+</ParamField>
+
+**Returns:** `void`
+
+```java
+publisher.removeObserver(emailObserver);
+```
+
+### notifyOrderShipped(Order order)
+
+Notifies all registered observers that an order has been shipped.
+
+<ParamField path="order" type="Order" required>
+  The order that has been shipped
+</ParamField>
+
+**Returns:** `void`
+
+```java
+Order order = new Order("ORD-001");
+order.setStatus("ENVIADO");
+publisher.notifyOrderShipped(order);
+// All registered observers will be notified
+```
+
+<Info>
+  This interface follows the Subject role in the classic Observer design pattern, enabling loose coupling between the order system and its notification mechanisms.
+</Info>
+
+## Implementation
+
+The primary implementation of this interface is:
+
+- [OrderEventPublisher](/api/order-event-publisher) - Manages observer subscriptions and broadcasts notifications
+
+## Usage Example
+
+```java
+// Create the subject (publisher)
+OrderSubject publisher = new OrderEventPublisher();
+
+// Create observers
+OrderObserver emailObserver = new EmailOrderObserver();
+OrderObserver logObserver = new LogOrderObserver();
+OrderObserver statsObserver = new StatsOrderObserver();
+
+// Subscribe observers
+publisher.addObserver(emailObserver);
+publisher.addObserver(logObserver);
+publisher.addObserver(statsObserver);
+
+// Create and ship an order
+Order order = new Order("ORD-001");
+order.setStatus("ENVIADO");
+
+// Notify all observers
+publisher.notifyOrderShipped(order);
+// Output:
+// [EMAIL] Pedido ORD-001 enviado. Mandando email al cliente.
+// [LOG] Pedido ORD-001 ha cambiado a estado: ENVIADO
+// [STATS] Contador de pedidos enviados: 1
+```
+
+## Design Pattern Role
+
+This interface represents the **Subject** in the Observer pattern:
+
+- **Maintains** a list of observers
+- **Provides** methods to add/remove observers
+- **Notifies** observers when state changes occur
+
+## Related Components
+
+- [OrderObserver](/api/order-observer) - Observer interface that receives notifications
+- [OrderEventPublisher](/api/order-event-publisher) - Concrete implementation of this interface
+- [OrderService](/api/order-service) - Uses OrderSubject to trigger notifications

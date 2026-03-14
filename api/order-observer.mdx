@@ -1,0 +1,117 @@
+---
+title: 'OrderObserver'
+description: 'Observer interface for receiving order shipment notifications'
+---
+
+## Overview
+
+The `OrderObserver` interface defines the contract for observers in the Observer pattern. Classes implementing this interface can subscribe to order events and receive notifications when orders are shipped.
+
+## Package
+
+```java
+patron_observer.marzo_2026_2
+```
+
+## Interface Definition
+
+```java
+public interface OrderObserver
+```
+
+## Methods
+
+### onOrderShipped(Order order)
+
+Callback method invoked when an order has been shipped. Implementing classes define their specific behavior in response to this event.
+
+<ParamField path="order" type="Order" required>
+  The order that has been shipped, containing the order ID and current status
+</ParamField>
+
+**Returns:** `void`
+
+```java
+@Override
+public void onOrderShipped(Order order) {
+    // Custom logic to handle order shipment
+    System.out.println("Order " + order.getId() + " has been shipped");
+}
+```
+
+<Info>
+  This interface follows the Observer role in the classic Observer design pattern, allowing multiple independent reactions to the same order event.
+</Info>
+
+## Implementations
+
+The system provides three concrete implementations of this interface:
+
+- [EmailOrderObserver](/api/observers#emailorderobserver) - Sends email notifications to customers
+- [LogOrderObserver](/api/observers#logorderobserver) - Records order status changes to logs
+- [StatsOrderObserver](/api/observers#statsorderobserver) - Tracks shipment statistics
+
+## Usage Example
+
+```java
+// Create a custom observer implementation
+public class CustomOrderObserver implements OrderObserver {
+    @Override
+    public void onOrderShipped(Order order) {
+        System.out.println("[CUSTOM] Processing order: " + order.getId());
+        // Add your custom logic here
+    }
+}
+
+// Use the observer
+OrderSubject publisher = new OrderEventPublisher();
+OrderObserver customObserver = new CustomOrderObserver();
+publisher.addObserver(customObserver);
+
+// When an order ships, the observer will be notified
+Order order = new Order("ORD-001");
+order.setStatus("ENVIADO");
+publisher.notifyOrderShipped(order);
+// Output: [CUSTOM] Processing order: ORD-001
+```
+
+## Creating Custom Observers
+
+To create a custom observer:
+
+1. Implement the `OrderObserver` interface
+2. Override the `onOrderShipped()` method with your custom logic
+3. Register the observer with an `OrderSubject` instance
+
+```java
+public class SmsOrderObserver implements OrderObserver {
+    @Override
+    public void onOrderShipped(Order order) {
+        // Send SMS notification
+        sendSms(order.getId());
+    }
+    
+    private void sendSms(String orderId) {
+        System.out.println("[SMS] Sending SMS for order: " + orderId);
+    }
+}
+```
+
+<Note>
+  Observers are notified synchronously in the order they were registered. Each observer should execute quickly to avoid blocking subsequent observers.
+</Note>
+
+## Design Pattern Role
+
+This interface represents the **Observer** in the Observer pattern:
+
+- **Defines** the update interface for objects that should be notified of changes
+- **Receives** notifications from the Subject when events occur
+- **Implements** specific behavior in response to notifications
+
+## Related Components
+
+- [OrderSubject](/api/order-subject) - Subject interface that manages observers
+- [OrderEventPublisher](/api/order-event-publisher) - Triggers observer notifications
+- [Observers](/api/observers) - Concrete observer implementations
+- [Order](/api/order) - Domain model passed to observers

@@ -1,0 +1,128 @@
+---
+title: Introduction
+description: Learn about the Observer Pattern Order System and how it demonstrates the Observer design pattern in Java
+---
+
+## What is the Observer Pattern Order System?
+
+The Observer Pattern Order System is a practical Java implementation of the **Observer design pattern** applied to an e-commerce order notification system. It demonstrates how to build a flexible, event-driven architecture where multiple components can react to order status changes without tight coupling.
+
+<Info>
+The Observer pattern is a behavioral design pattern that defines a one-to-many dependency between objects. When one object changes state, all its dependents are notified and updated automatically.
+</Info>
+
+## Why Use the Observer Pattern?
+
+In e-commerce systems, when an order is shipped, multiple actions need to occur:
+- Send email notifications to customers
+- Log the event for audit trails
+- Update statistics and metrics
+- Trigger inventory updates
+- Notify shipping providers
+
+Without the Observer pattern, you'd have tightly coupled code where the order service directly calls each of these systems. With the Observer pattern, you achieve:
+
+<CardGroup cols={2}>
+  <Card title="Loose Coupling" icon="link-slash">
+    The order service doesn't need to know about specific observers. It just publishes events.
+  </Card>
+  <Card title="Open/Closed Principle" icon="lock-open">
+    Add new observers without modifying existing code. The system is open for extension, closed for modification.
+  </Card>
+  <Card title="Dynamic Subscriptions" icon="arrows-rotate">
+    Observers can subscribe or unsubscribe at runtime, providing flexibility.
+  </Card>
+  <Card title="Single Responsibility" icon="bullseye">
+    Each observer handles one specific concern (email, logging, stats) independently.
+  </Card>
+</CardGroup>
+
+## Architecture Overview
+
+The system consists of four main components:
+
+### 1. Subject Interface (`OrderSubject`)
+
+Defines the contract for managing and notifying observers:
+
+```java
+public interface OrderSubject {
+    void addObserver(OrderObserver observer);
+    void removeObserver(OrderObserver observer);
+    void notifyOrderShipped(Order order);
+}
+```
+
+### 2. Observer Interface (`OrderObserver`)
+
+Defines the contract that all observers must implement:
+
+```java
+public interface OrderObserver {
+    void onOrderShipped(Order order);
+}
+```
+
+### 3. Concrete Subject (`OrderEventPublisher`)
+
+Manages the list of observers and notifies them when events occur:
+
+```java
+public class OrderEventPublisher implements OrderSubject {
+    private final List<OrderObserver> observers = new ArrayList<>();
+
+    @Override
+    public void notifyOrderShipped(Order order) {
+        for (OrderObserver observer : observers) {
+            observer.onOrderShipped(order);
+        }
+    }
+}
+```
+
+### 4. Concrete Observers
+
+Three implementations demonstrate different use cases:
+
+- **EmailOrderObserver**: Sends email notifications to customers
+- **LogOrderObserver**: Records order events in logs
+- **StatsOrderObserver**: Tracks metrics and statistics
+
+<Note>
+Each observer implements the same `OrderObserver` interface but performs completely different actions when notified.
+</Note>
+
+## Real-World Applications
+
+This pattern is widely used in:
+
+- **Event-driven architectures**: Microservices communicating via events
+- **UI frameworks**: React, Angular, Vue.js for state management
+- **Message queues**: Kafka, RabbitMQ for pub/sub messaging
+- **Monitoring systems**: Alerting and notification systems
+- **Workflow engines**: Business process automation
+
+## Key Benefits
+
+<Steps>
+  <Step title="Decoupling">
+    The `OrderService` doesn't know about specific observers. It only depends on the `OrderSubject` interface.
+  </Step>
+  <Step title="Extensibility">
+    Add new observers (SMS, push notifications, webhooks) without changing existing code.
+  </Step>
+  <Step title="Testability">
+    Mock observers easily for unit testing the order service.
+  </Step>
+  <Step title="Maintainability">
+    Each observer is a separate class with a single responsibility.
+  </Step>
+</Steps>
+
+<Warning>
+Be careful with observer execution order. In this implementation, observers are notified sequentially. If one observer fails, it may prevent subsequent observers from executing.
+</Warning>
+
+## What's Next?
+
+Ready to see it in action? Head to the [Quickstart](/quickstart) to run the system and understand how all the pieces work together.

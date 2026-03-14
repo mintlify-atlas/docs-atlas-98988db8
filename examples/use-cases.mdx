@@ -1,0 +1,405 @@
+---
+title: "Real-World Use Cases"
+description: "Explore practical scenarios where the Observer Pattern shines in e-commerce applications"
+---
+
+## When to Use the Observer Pattern
+
+The Observer Pattern is ideal when you need to maintain consistency between related objects without tightly coupling them. In e-commerce systems, this pattern enables scalable, maintainable event-driven architectures.
+
+## E-Commerce Use Cases
+
+### Order Lifecycle Management
+
+The primary use case demonstrated in this implementation is managing order state transitions.
+
+<CodeGroup>
+```java Order Shipping
+public class OrderService {
+    private final OrderSubject orderSubject;
+
+    public void shipOrder(Order order) {
+        order.setStatus("ENVIADO");
+        System.out.println("OrderService: Pedido " + order.getId() + " marcado como ENVIADO.");
+        
+        // Single call notifies all observers
+        orderSubject.notifyOrderShipped(order);
+    }
+}
+```
+
+```java Multiple Reactions
+// EmailOrderObserver
+[EMAIL] Pedido ORD-001 enviado. Mandando email al cliente.
+
+// LogOrderObserver
+[LOG] Pedido ORD-001 ha cambiado a estado: ENVIADO
+
+// StatsOrderObserver
+[STATS] Contador de pedidos enviados: 1
+```
+</CodeGroup>
+
+<Tip>
+  With this pattern, adding new functionality (like SMS notifications or warehouse updates) requires zero changes to existing code.
+</Tip>
+
+### Multi-Channel Notifications
+
+Notify customers through multiple channels without coupling the business logic to specific notification methods.
+
+<Steps>
+  <Step title="Email Notifications">
+    ```java
+    public class EmailOrderObserver implements OrderObserver {
+        @Override
+        public void onOrderShipped(Order order) {
+            System.out.println("[EMAIL] Pedido " + order.getId() + " enviado. Mandando email al cliente.");
+        }
+    }
+    ```
+    
+    Sends confirmation emails when orders ship.
+  </Step>
+
+  <Step title="SMS Alerts">
+    ```java
+    public class SMSOrderObserver implements OrderObserver {
+        @Override
+        public void onOrderShipped(Order order) {
+            System.out.println("[SMS] Sending delivery update to customer");
+        }
+    }
+    ```
+    
+    Sends text message updates for time-sensitive notifications.
+  </Step>
+
+  <Step title="Push Notifications">
+    ```java
+    public class PushNotificationObserver implements OrderObserver {
+        @Override
+        public void onOrderShipped(Order order) {
+            System.out.println("[PUSH] Sending app notification");
+        }
+    }
+    ```
+    
+    Updates mobile app users in real-time.
+  </Step>
+</Steps>
+
+### Analytics and Monitoring
+
+Track business metrics without polluting your core business logic.
+
+```java StatsOrderObserver.java
+public class StatsOrderObserver implements OrderObserver {
+
+    private int totalEnviados = 0;
+
+    @Override
+    public void onOrderShipped(Order order) {
+        totalEnviados++;
+        System.out.println("[STATS] Contador de pedidos enviados: " + totalEnviados);
+    }
+}
+```
+
+<Note>
+  The statistics observer maintains its own state independently, tracking metrics across all order events.
+</Note>
+
+### Audit Trail and Logging
+
+Maintain comprehensive logs for compliance and debugging:
+
+```java LogOrderObserver.java
+public class LogOrderObserver implements OrderObserver {
+
+    @Override
+    public void onOrderShipped(Order order) {
+        System.out.println("[LOG] Pedido " + order.getId() + " ha cambiado a estado: " + order.getStatus());
+    }
+}
+```
+
+## Advanced Use Cases
+
+### Inventory Management
+
+```java
+public class InventoryObserver implements OrderObserver {
+    
+    private final InventoryService inventoryService;
+    
+    public InventoryObserver(InventoryService inventoryService) {
+        this.inventoryService = inventoryService;
+    }
+    
+    @Override
+    public void onOrderShipped(Order order) {
+        // Update inventory counts
+        inventoryService.decrementStock(order.getItems());
+        System.out.println("[INVENTORY] Stock updated for order " + order.getId());
+    }
+}
+```
+
+**Benefits:**
+- Inventory updates happen automatically when orders ship
+- No need to modify OrderService when inventory logic changes
+- Easy to add alternative inventory strategies
+
+### Financial Reconciliation
+
+```java
+public class AccountingObserver implements OrderObserver {
+    
+    private final AccountingSystem accountingSystem;
+    
+    @Override
+    public void onOrderShipped(Order order) {
+        // Record revenue
+        accountingSystem.recordSale(order.getId(), order.getTotal());
+        
+        // Update financial reports
+        accountingSystem.updateDailyRevenue(order.getTotal());
+        
+        System.out.println("[ACCOUNTING] Revenue recorded for " + order.getId());
+    }
+}
+```
+
+### Loyalty Program Integration
+
+```java
+public class LoyaltyPointsObserver implements OrderObserver {
+    
+    private final LoyaltyService loyaltyService;
+    
+    @Override
+    public void onOrderShipped(Order order) {
+        // Award points based on order value
+        int points = calculatePoints(order.getTotal());
+        loyaltyService.awardPoints(order.getCustomerId(), points);
+        
+        System.out.println("[LOYALTY] " + points + " points awarded");
+    }
+    
+    private int calculatePoints(double total) {
+        return (int) (total * 10); // 10 points per dollar
+    }
+}
+```
+
+### Third-Party Integrations
+
+```java
+public class ShippingProviderObserver implements OrderObserver {
+    
+    private final ShippingAPI shippingAPI;
+    
+    @Override
+    public void onOrderShipped(Order order) {
+        // Create shipping label
+        String trackingNumber = shippingAPI.createShipment(order);
+        
+        // Update order with tracking
+        order.setTrackingNumber(trackingNumber);
+        
+        System.out.println("[SHIPPING] Label created: " + trackingNumber);
+    }
+}
+```
+
+<Tip>
+  External integrations become plug-and-play modules. Simply add or remove observers to enable or disable integrations.
+</Tip>
+
+## Architecture Benefits
+
+<CardGroup cols={2}>
+  <Card title="Loose Coupling" icon="link-slash">
+    The `OrderService` doesn't know about specific observers. You can add email, SMS, or database observers without changing the core service.
+  </Card>
+  
+  <Card title="Open/Closed Principle" icon="door-open">
+    The system is open for extension (add new observers) but closed for modification (no changes to existing code).
+  </Card>
+  
+  <Card title="Single Responsibility" icon="bullseye">
+    Each observer handles one concern: email, logging, stats, etc. The `OrderService` focuses only on order processing.
+  </Card>
+  
+  <Card title="Scalability" icon="arrows-maximize">
+    Adding new features is as simple as creating a new observer class. No ripple effects through the codebase.
+  </Card>
+</CardGroup>
+
+## The Publisher Implementation
+
+The `OrderEventPublisher` manages all observers and coordinates notifications:
+
+```java OrderEventPublisher.java
+package patron_observer.marzo_2026_2;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class OrderEventPublisher implements OrderSubject {
+
+    private final List<OrderObserver> observers = new ArrayList<>();
+
+    @Override
+    public void addObserver(OrderObserver observer) {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(OrderObserver observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyOrderShipped(Order order) {
+        for (OrderObserver observer : observers) {
+            observer.onOrderShipped(order);
+        }
+    }
+}
+```
+
+<Note>
+  The publisher iterates through all registered observers and calls their `onOrderShipped()` method, ensuring every observer receives the event.
+</Note>
+
+## Extending to Other Order Events
+
+While this implementation focuses on shipping events, you can easily extend it:
+
+```java
+public interface OrderSubject {
+    // Existing method
+    void notifyOrderShipped(Order order);
+    
+    // Additional events
+    void notifyOrderCreated(Order order);
+    void notifyOrderCancelled(Order order);
+    void notifyOrderDelivered(Order order);
+    void notifyOrderRefunded(Order order);
+    
+    // Observer management
+    void addObserver(OrderObserver observer);
+    void removeObserver(OrderObserver observer);
+}
+```
+
+```java
+public interface OrderObserver {
+    // Existing method
+    void onOrderShipped(Order order);
+    
+    // Additional event handlers
+    default void onOrderCreated(Order order) {}
+    default void onOrderCancelled(Order order) {}
+    default void onOrderDelivered(Order order) {}
+    default void onOrderRefunded(Order order) {}
+}
+```
+
+<Tip>
+  Using `default` methods in the interface allows existing observers to work without changes while enabling new observers to handle additional events.
+</Tip>
+
+## Real-World Example: Complete Workflow
+
+Here's how all the pieces work together in a production scenario:
+
+```java
+public class ProductionExample {
+    
+    public static void main(String[] args) {
+        // Setup infrastructure
+        OrderSubject publisher = new OrderEventPublisher();
+        
+        // Customer-facing observers
+        publisher.addObserver(new EmailOrderObserver());
+        publisher.addObserver(new SMSOrderObserver());
+        publisher.addObserver(new PushNotificationObserver());
+        
+        // Business intelligence observers
+        publisher.addObserver(new StatsOrderObserver());
+        publisher.addObserver(new LogOrderObserver());
+        publisher.addObserver(new AnalyticsObserver());
+        
+        // Integration observers
+        publisher.addObserver(new InventoryObserver(inventoryService));
+        publisher.addObserver(new AccountingObserver(accountingSystem));
+        publisher.addObserver(new ShippingProviderObserver(shippingAPI));
+        publisher.addObserver(new LoyaltyPointsObserver(loyaltyService));
+        
+        // Process order
+        OrderService orderService = new OrderService(publisher);
+        Order order = new Order("ORD-001");
+        orderService.shipOrder(order);
+        
+        // All observers are automatically notified!
+    }
+}
+```
+
+**What happens when `shipOrder()` is called:**
+
+1. Order status updates to "ENVIADO"
+2. Customer receives email confirmation
+3. Customer receives SMS update
+4. Mobile app shows push notification
+5. Statistics counter increments
+6. Event is logged for audit trail
+7. Analytics data is recorded
+8. Inventory is decremented
+9. Revenue is recorded in accounting system
+10. Shipping label is created
+11. Loyalty points are awarded
+
+<Note>
+  All of this happens with a single method call, and the `OrderService` remains blissfully unaware of these 11 different operations.
+</Note>
+
+## When NOT to Use Observer Pattern
+
+<Warning>
+  The Observer Pattern isn't always the right choice. Avoid it when:
+  
+  - **Simple linear workflows**: If you only have 1-2 actions, direct method calls are simpler
+  - **Order matters**: Observers are typically called in registration order, but this isn't guaranteed
+  - **Transactional requirements**: If all actions must succeed or fail together, use a different pattern
+  - **Complex dependencies**: If observers need to communicate with each other, consider a mediator pattern instead
+</Warning>
+
+## Performance Considerations
+
+- **Synchronous by default**: All observers are called sequentially in the same thread
+- **For async operations**: Wrap observer logic in async tasks or message queues
+- **For heavy processing**: Consider using worker threads or event queues
+
+```java
+public class AsyncEmailObserver implements OrderObserver {
+    
+    private final ExecutorService executor = Executors.newFixedThreadPool(10);
+    
+    @Override
+    public void onOrderShipped(Order order) {
+        executor.submit(() -> {
+            sendEmail(order);
+        });
+    }
+}
+```
+
+## Next Steps
+
+- Try the [basic usage example](/examples/basic-usage) to see it in action
+- Learn how to [create custom observers](/examples/adding-observers)
+- Review the [core components](/guide/subject-interface) to understand the architecture

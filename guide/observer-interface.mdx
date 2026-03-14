@@ -1,0 +1,242 @@
+---
+title: 'Observer Interface'
+description: 'Defining the Observer contract for receiving order notifications'
+---
+
+## Overview
+
+The Observer interface defines the contract that all concrete observers must implement. It ensures that any class wanting to receive notifications about order events provides the necessary callback method.
+
+<Info>
+The Observer pattern promotes loose coupling: the Subject doesn't need to know the concrete types of observers, only that they implement the `OrderObserver` interface.
+</Info>
+
+## The Observer Contract
+
+In this implementation, observers are notified specifically when an order is shipped. The interface defines a single callback method for this event.
+
+<Steps>
+  <Step title="Define the Interface">
+    Create an interface with a single method that will be called when the observed event occurs.
+  </Step>
+  
+  <Step title="Specify the Callback Signature">
+    The callback method receives the `Order` object as a parameter, providing full context about the event.
+  </Step>
+  
+  <Step title="Keep It Simple">
+    Follow the Single Responsibility Principle: this interface focuses solely on order shipped events.
+  </Step>
+</Steps>
+
+## Implementation
+
+```java OrderObserver.java
+package patron_observer.marzo_2026_2;
+
+//observer
+public interface OrderObserver {
+    void onOrderShipped(Order order);
+}
+```
+
+## Interface Design
+
+<CardGroup cols={2}>
+  <Card title="Single Method" icon="1">
+    The interface defines only one method, making it a functional interface that could be implemented with lambda expressions.
+  </Card>
+  
+  <Card title="Event-Specific" icon="bell">
+    The method name `onOrderShipped` clearly indicates when this callback will be invoked.
+  </Card>
+  
+  <Card title="Rich Context" icon="box">
+    Passing the entire `Order` object gives observers access to all order data (ID, status, etc.).
+  </Card>
+  
+  <Card title="Void Return" icon="arrow-right">
+    Observers process notifications without returning values, keeping the pattern simple and decoupled.
+  </Card>
+</CardGroup>
+
+## Why This Design?
+
+### 1. Simplicity
+
+The interface is intentionally minimal. A single method means:
+- Easy to implement
+- Clear purpose
+- Low maintenance overhead
+- Can be used as a functional interface
+
+### 2. Flexibility
+
+By passing the entire `Order` object:
+- Observers have access to all order information
+- Future additions to `Order` don't require interface changes
+- Different observers can use different properties of the order
+
+### 3. Type Safety
+
+Using an interface instead of a generic listener ensures:
+- Compile-time type checking
+- Clear contract for implementers
+- Better IDE support and autocomplete
+
+## Implementing the Observer
+
+Any class that implements this interface can receive order notifications:
+
+```java
+public class CustomObserver implements OrderObserver {
+    @Override
+    public void onOrderShipped(Order order) {
+        // Your custom logic here
+        System.out.println("Processing order: " + order.getId());
+    }
+}
+```
+
+## Functional Interface Usage
+
+<Note>
+Since `OrderObserver` has a single abstract method, it's a functional interface. You can create observers using lambda expressions:
+</Note>
+
+```java
+// Lambda implementation
+OrderObserver lambdaObserver = (order) -> {
+    System.out.println("Lambda: Order " + order.getId() + " shipped!");
+};
+
+// Method reference
+OrderObserver methodRefObserver = this::handleOrderShipped;
+
+// Anonymous class
+OrderObserver anonObserver = new OrderObserver() {
+    @Override
+    public void onOrderShipped(Order order) {
+        System.out.println("Anonymous: " + order.getId());
+    }
+};
+```
+
+## Multiple Event Types (Extension)
+
+If you need to handle multiple event types, you have several options:
+
+### Option 1: Separate Interfaces
+
+```java
+public interface OrderObserver {
+    void onOrderShipped(Order order);
+}
+
+public interface OrderCreatedObserver {
+    void onOrderCreated(Order order);
+}
+
+public interface OrderCancelledObserver {
+    void onOrderCancelled(Order order);
+}
+```
+
+### Option 2: Unified Interface with Default Methods
+
+```java
+public interface OrderObserver {
+    default void onOrderCreated(Order order) {}
+    default void onOrderShipped(Order order) {}
+    default void onOrderCancelled(Order order) {}
+}
+```
+
+### Option 3: Event Object Pattern
+
+```java
+public interface OrderObserver {
+    void onOrderEvent(OrderEvent event);
+}
+
+public class OrderEvent {
+    private Order order;
+    private EventType type; // CREATED, SHIPPED, CANCELLED
+    // ...
+}
+```
+
+<Warning>
+For this implementation, we keep it simple with a single event type. Choose the approach that best fits your needs:
+- **Single event**: Use the current design
+- **Few events**: Use separate interfaces or default methods
+- **Many events**: Use the event object pattern
+</Warning>
+
+## Observer Responsibilities
+
+When implementing this interface, observers should:
+
+1. **Be Fast**: Execute quickly to avoid blocking other observers
+2. **Be Safe**: Handle exceptions internally to prevent disrupting the notification chain
+3. **Be Stateless** (when possible): Avoid depending on mutable shared state
+4. **Be Independent**: Not assume anything about execution order or other observers
+
+## Complete Example
+
+Here's how all the pieces work together:
+
+```java
+// 1. Define observers
+OrderObserver emailObserver = order -> 
+    System.out.println("Sending email for order " + order.getId());
+
+OrderObserver logObserver = order -> 
+    System.out.println("Logging order " + order.getId());
+
+// 2. Create subject
+OrderEventPublisher publisher = new OrderEventPublisher();
+
+// 3. Register observers
+publisher.addObserver(emailObserver);
+publisher.addObserver(logObserver);
+
+// 4. Trigger event
+Order order = new Order("ORD-123");
+order.setStatus("ENVIADO");
+publisher.notifyOrderShipped(order);
+
+// Output:
+// Sending email for order ORD-123
+// Logging order ORD-123
+```
+
+## Testing Observers
+
+<Note>
+The simple interface makes testing easy:
+</Note>
+
+```java
+@Test
+public void testObserverNotification() {
+    // Arrange
+    AtomicBoolean called = new AtomicBoolean(false);
+    OrderObserver testObserver = order -> called.set(true);
+    
+    OrderEventPublisher publisher = new OrderEventPublisher();
+    publisher.addObserver(testObserver);
+    
+    Order order = new Order("TEST-001");
+    
+    // Act
+    publisher.notifyOrderShipped(order);
+    
+    // Assert
+    assertTrue(called.get());
+}
+```
+
+## Next Steps
+
+Now that we have the Observer interface defined, we'll implement concrete observers that perform specific actions when orders are shipped: sending emails, logging events, and tracking statistics.

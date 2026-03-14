@@ -1,80 +1,290 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get the Observer Pattern Order System up and running in minutes
 ---
 
-## Get started in three steps
+## Prerequisites
 
-Get your documentation site running locally and make your first customization.
+Before you begin, ensure you have:
 
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+- **Java 8+** installed on your system
+- **Lombok** library in your classpath (or IDE plugin configured)
+- A Java IDE (IntelliJ IDEA, Eclipse, or VS Code with Java extensions)
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+This project uses Lombok annotations (`@Getter`, `@Setter`) to reduce boilerplate code. Make sure your IDE has Lombok support enabled.
 </Note>
+
+## Quick Start
+
+<Steps>
+  <Step title="Set up the project structure">
+    Create a new Java project and organize the files in the package `patron_observer.marzo_2026_2`:
+
+    ```
+    src/
+    └── patron_observer/
+        └── marzo_2026_2/
+            ├── AppMain.java
+            ├── Order.java
+            ├── OrderSubject.java
+            ├── OrderObserver.java
+            ├── OrderEventPublisher.java
+            ├── EmailOrderObserver.java
+            ├── LogOrderObserver.java
+            ├── StatsOrderObserver.java
+            └── OrderService.java
+    ```
+  </Step>
+
+  <Step title="Run the main application">
+    Execute the `AppMain` class. You should see output showing all three observers reacting to the order shipment:
+
+    ```bash
+    java patron_observer.marzo_2026_2.AppMain
+    ```
+
+    **Expected Output:**
+    ```
+    OrderService: Pedido ORD-001 marcado como ENVIADO.
+    [EMAIL] Pedido ORD-001 enviado. Mandando email al cliente.
+    [LOG] Pedido ORD-001 ha cambiado a estado: ENVIADO
+    [STATS] Contador de pedidos enviados: 1
+    ```
+  </Step>
+
+  <Step title="Understand what happened">
+    Let's break down the execution flow from `AppMain.java`:
+
+    ```java
+    // 1. Create the Subject (event publisher)
+    OrderSubject publisher = new OrderEventPublisher();
+
+    // 2. Create observers
+    OrderObserver emailObserver = new EmailOrderObserver();
+    OrderObserver logObserver = new LogOrderObserver();
+    OrderObserver statsObserver = new StatsOrderObserver();
+
+    // 3. Subscribe observers to the subject
+    publisher.addObserver(emailObserver);
+    publisher.addObserver(logObserver);
+    publisher.addObserver(statsObserver);
+
+    // 4. Create the service using the subject
+    OrderService orderService = new OrderService(publisher);
+
+    // 5. Ship an order - this triggers all observers
+    Order order = new Order("ORD-001");
+    orderService.shipOrder(order);
+    ```
+  </Step>
+</Steps>
+
+## Understanding the Flow
+
+When `orderService.shipOrder(order)` is called, here's what happens:
+
+<Steps>
+  <Step title="Order status updated">
+    The `OrderService` updates the order status to "ENVIADO" (shipped):
+
+    ```java
+    public void shipOrder(Order order) {
+        order.setStatus("ENVIADO");
+        System.out.println("OrderService: Pedido " + order.getId() + " marcado como ENVIADO.");
+        
+        // Notify all observers
+        orderSubject.notifyOrderShipped(order);
+    }
+    ```
+  </Step>
+
+  <Step title="Subject notifies observers">
+    The `OrderEventPublisher` iterates through all registered observers:
+
+    ```java
+    public void notifyOrderShipped(Order order) {
+        for (OrderObserver observer : observers) {
+            observer.onOrderShipped(order);
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Each observer reacts">
+    Each observer performs its specific action:
+
+    **Email Observer:**
+    ```java
+    public void onOrderShipped(Order order) {
+        System.out.println("[EMAIL] Pedido " + order.getId() + " enviado. Mandando email al cliente.");
+    }
+    ```
+
+    **Log Observer:**
+    ```java
+    public void onOrderShipped(Order order) {
+        System.out.println("[LOG] Pedido " + order.getId() + " ha cambiado a estado: " + order.getStatus());
+    }
+    ```
+
+    **Stats Observer:**
+    ```java
+    private int totalEnviados = 0;
+
+    public void onOrderShipped(Order order) {
+        totalEnviados++;
+        System.out.println("[STATS] Contador de pedidos enviados: " + totalEnviados);
+    }
+    ```
+  </Step>
+</Steps>
+
+## Experiment: Add a New Observer
+
+Let's add an SMS notification observer to demonstrate the extensibility of the pattern.
+
+<Steps>
+  <Step title="Create SmsOrderObserver.java">
+    ```java
+    package patron_observer.marzo_2026_2;
+
+    public class SmsOrderObserver implements OrderObserver {
+        
+        @Override
+        public void onOrderShipped(Order order) {
+            System.out.println("[SMS] Enviando mensaje de texto sobre el pedido " + order.getId());
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Register the new observer">
+    In `AppMain.java`, add these lines after creating the other observers:
+
+    ```java
+    OrderObserver smsObserver = new SmsOrderObserver();
+    publisher.addObserver(smsObserver);
+    ```
+  </Step>
+
+  <Step title="Run and verify">
+    Run the application again. You should now see four notifications:
+
+    ```
+    OrderService: Pedido ORD-001 marcado como ENVIADO.
+    [EMAIL] Pedido ORD-001 enviado. Mandando email al cliente.
+    [LOG] Pedido ORD-001 ha cambiado a estado: ENVIADO
+    [STATS] Contador de pedidos enviados: 1
+    [SMS] Enviando mensaje de texto sobre el pedido ORD-001
+    ```
+  </Step>
+</Steps>
+
+<Info>
+Notice how we added a new observer without modifying any existing classes. This demonstrates the **Open/Closed Principle**: the system is open for extension but closed for modification.
+</Info>
+
+## Experiment: Dynamic Observer Management
+
+Try removing an observer at runtime:
+
+```java
+// After shipping the first order
+orderService.shipOrder(order);
+
+// Remove the email observer
+publisher.removeObserver(emailObserver);
+
+// Ship another order
+Order order2 = new Order("ORD-002");
+orderService.shipOrder(order2);
+```
+
+The second order will not trigger email notifications, but log and stats will still work.
+
+## The Order Model
+
+The `Order` class is a simple domain model:
+
+```java
+@Getter
+@Setter
+public class Order {
+    private String id;
+    private String status; // "CREADO", "ENVIADO", etc.
+
+    public Order(String id) {
+        this.id = id;
+        this.status = "CREADO";
+    }
+}
+```
+
+<Note>
+Orders are created with status "CREADO" (created) and updated to "ENVIADO" (shipped) by the `OrderService`.
+</Note>
+
+## Common Patterns
+
+### Dependency Injection
+
+Notice how `OrderService` receives the `OrderSubject` via constructor injection:
+
+```java
+public class OrderService {
+    private final OrderSubject orderSubject;
+
+    public OrderService(OrderSubject orderSubject) {
+        this.orderSubject = orderSubject;
+    }
+}
+```
+
+This makes the service:
+- **Testable**: You can inject a mock subject for unit tests
+- **Flexible**: You can swap different subject implementations
+- **Decoupled**: The service depends on the interface, not the implementation
+
+### Interface Segregation
+
+Both `OrderSubject` and `OrderObserver` are minimal interfaces with clear responsibilities:
+
+```java
+public interface OrderSubject {
+    void addObserver(OrderObserver observer);
+    void removeObserver(OrderObserver observer);
+    void notifyOrderShipped(Order order);
+}
+
+public interface OrderObserver {
+    void onOrderShipped(Order order);
+}
+```
+
+<Warning>
+In production systems, consider:
+- **Error handling**: What happens if an observer throws an exception?
+- **Async notifications**: Should observers run in parallel threads?
+- **Event ordering**: Do observers need to execute in a specific order?
+- **Memory leaks**: Remove observers when they're no longer needed
+</Warning>
+
+## Next Steps
+
+Now that you understand the basics:
+
+1. Experiment with multiple orders and observe the stats counter
+2. Create observers for other events (order cancelled, order returned)
+3. Implement error handling in observers
+4. Add async notification support using threads or CompletableFuture
+5. Integrate with real email/SMS services
+
+<CardGroup cols={2}>
+  <Card title="Architecture Deep Dive" icon="diagram-project" href="/concepts/architecture">
+    Explore the design decisions and patterns used
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/order">
+    Detailed documentation of all classes and methods
+  </Card>
+</CardGroup>

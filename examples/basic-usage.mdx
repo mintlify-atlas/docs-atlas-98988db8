@@ -1,0 +1,180 @@
+---
+title: "Basic Usage"
+description: "Learn how to use the Observer Pattern for order notifications with a complete working example"
+---
+
+## Complete Example
+
+The Observer Pattern allows multiple components to react to order events without tight coupling. Here's a complete working example from `AppMain.java`:
+
+```java AppMain.java
+package patron_observer.marzo_2026_2;
+
+public class AppMain {
+
+    public static void main(String[] args) {
+
+        // 1) Create the Subject (event publisher)
+        OrderSubject publisher = new OrderEventPublisher();
+
+        // 2) Create observers
+        OrderObserver emailObserver = new EmailOrderObserver();
+        OrderObserver logObserver = new LogOrderObserver();
+        OrderObserver statsObserver = new StatsOrderObserver();
+
+        // 3) Subscribe observers to the subject
+        publisher.addObserver(emailObserver);
+        publisher.addObserver(logObserver);
+        publisher.addObserver(statsObserver);
+
+        // 4) Create the service using the subject
+        OrderService orderService = new OrderService(publisher);
+
+        // 5) Create an order and ship it
+        Order order = new Order("ORD-001");
+        orderService.shipOrder(order); // This function calls each observer
+    }
+}
+```
+
+## Step-by-Step Breakdown
+
+<Steps>
+  <Step title="Create the Event Publisher">
+    The `OrderEventPublisher` is the Subject that manages all observers and notifies them of events.
+
+    ```java
+    OrderSubject publisher = new OrderEventPublisher();
+    ```
+
+    This creates a centralized publisher that will coordinate all notifications.
+  </Step>
+
+  <Step title="Instantiate Observers">
+    Create instances of each observer that will react to order events.
+
+    ```java
+    OrderObserver emailObserver = new EmailOrderObserver();
+    OrderObserver logObserver = new LogOrderObserver();
+    OrderObserver statsObserver = new StatsOrderObserver();
+    ```
+
+    Each observer has a specific responsibility:
+    - **EmailOrderObserver**: Sends email notifications to customers
+    - **LogOrderObserver**: Records order status changes
+    - **StatsOrderObserver**: Tracks order statistics
+  </Step>
+
+  <Step title="Register Observers">
+    Subscribe each observer to the publisher so they receive notifications.
+
+    ```java
+    publisher.addObserver(emailObserver);
+    publisher.addObserver(logObserver);
+    publisher.addObserver(statsObserver);
+    ```
+
+    <Note>
+      You can add or remove observers at any time during runtime, making the system highly flexible.
+    </Note>
+  </Step>
+
+  <Step title="Initialize the OrderService">
+    The service handles business logic and uses the publisher to notify observers.
+
+    ```java
+    OrderService orderService = new OrderService(publisher);
+    ```
+
+    By passing the publisher to the service, we enable it to trigger notifications without knowing about specific observers.
+  </Step>
+
+  <Step title="Process an Order">
+    Create and ship an order, which automatically notifies all observers.
+
+    ```java
+    Order order = new Order("ORD-001");
+    orderService.shipOrder(order);
+    ```
+
+    When `shipOrder()` is called, the following happens:
+    1. Order status is updated to "ENVIADO" (Shipped)
+    2. All registered observers are notified via `onOrderShipped()`
+    3. Each observer performs its specific action
+  </Step>
+</Steps>
+
+## Expected Output
+
+When you run this example, you'll see output from each observer:
+
+```
+OrderService: Pedido ORD-001 marcado como ENVIADO.
+[EMAIL] Pedido ORD-001 enviado. Mandando email al cliente.
+[LOG] Pedido ORD-001 ha cambiado a estado: ENVIADO
+[STATS] Contador de pedidos enviados: 1
+```
+
+<Tip>
+  Notice how the OrderService doesn't need to know about email, logging, or statistics. It simply notifies the publisher, and all observers react independently.
+</Tip>
+
+## Key Components
+
+### Order Model
+
+The domain model representing an order:
+
+```java Order.java
+package patron_observer.marzo_2026_2;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class Order {
+
+    private String id;
+    private String status; // "CREADO", "ENVIADO", etc.
+
+    public Order(String id) {
+        this.id = id;
+        this.status = "CREADO";
+    }
+}
+```
+
+### OrderService
+
+The business logic that triggers notifications:
+
+```java OrderService.java
+package patron_observer.marzo_2026_2;
+
+public class OrderService {
+    private final OrderSubject orderSubject;
+
+    public OrderService(OrderSubject orderSubject) {
+        this.orderSubject = orderSubject;
+    }
+
+    public void shipOrder(Order order) {
+        // Business logic to "ship" the order
+        order.setStatus("ENVIADO");
+        System.out.println("OrderService: Pedido " + order.getId() + " marcado como ENVIADO.");
+
+        // Notify all observers (Mail, Log, Stats) - 3 calls in total
+        orderSubject.notifyOrderShipped(order);
+    }
+}
+```
+
+<Note>
+  The `OrderService` depends on the `OrderSubject` interface, not the concrete implementation. This follows the Dependency Inversion Principle.
+</Note>
+
+## Next Steps
+
+- Learn how to [create and add custom observers](/examples/adding-observers)
+- Explore [real-world use cases](/examples/use-cases) for this pattern

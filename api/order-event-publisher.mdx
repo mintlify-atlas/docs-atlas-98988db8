@@ -1,0 +1,167 @@
+---
+title: 'OrderEventPublisher'
+description: 'Concrete Subject implementation that manages observers and publishes order events'
+---
+
+## Overview
+
+The `OrderEventPublisher` class is the concrete implementation of the `OrderSubject` interface. It maintains a list of observers and handles the distribution of order shipment notifications to all registered observers.
+
+## Package
+
+```java
+patron_observer.marzo_2026_2
+```
+
+## Class Definition
+
+```java
+public class OrderEventPublisher implements OrderSubject
+```
+
+## Fields
+
+<ResponseField name="observers" type="List<OrderObserver>" default="new ArrayList<>()">
+  Internal list that stores all registered observers. This field is `final` and initialized as an empty `ArrayList`.
+</ResponseField>
+
+## Constructors
+
+### OrderEventPublisher()
+
+Creates a new event publisher with an empty list of observers.
+
+```java
+OrderEventPublisher publisher = new OrderEventPublisher();
+```
+
+## Methods
+
+### addObserver(OrderObserver observer)
+
+Registers an observer to receive order shipment notifications.
+
+<ParamField path="observer" type="OrderObserver" required>
+  The observer instance to be added to the notification list
+</ParamField>
+
+**Returns:** `void`
+
+**Implementation:** Adds the observer to the internal `observers` list.
+
+```java
+OrderEventPublisher publisher = new OrderEventPublisher();
+OrderObserver emailObserver = new EmailOrderObserver();
+publisher.addObserver(emailObserver);
+```
+
+### removeObserver(OrderObserver observer)
+
+Unregisters an observer from receiving order shipment notifications.
+
+<ParamField path="observer" type="OrderObserver" required>
+  The observer instance to be removed from the notification list
+</ParamField>
+
+**Returns:** `void`
+
+**Implementation:** Removes the observer from the internal `observers` list.
+
+```java
+publisher.removeObserver(emailObserver);
+```
+
+### notifyOrderShipped(Order order)
+
+Notifies all registered observers that an order has been shipped by calling each observer's `onOrderShipped()` method.
+
+<ParamField path="order" type="Order" required>
+  The order that has been shipped
+</ParamField>
+
+**Returns:** `void`
+
+**Implementation:** Iterates through all observers in the list and invokes their `onOrderShipped()` method with the provided order.
+
+```java
+Order order = new Order("ORD-001");
+order.setStatus("ENVIADO");
+publisher.notifyOrderShipped(order);
+// All registered observers are notified in order
+```
+
+<Note>
+  Observers are notified synchronously in the order they were registered. The iteration uses a for-each loop, so modifications to the observer list during notification may cause unexpected behavior.
+</Note>
+
+## Complete Usage Example
+
+```java
+// 1. Create the event publisher
+OrderSubject publisher = new OrderEventPublisher();
+
+// 2. Create observer instances
+OrderObserver emailObserver = new EmailOrderObserver();
+OrderObserver logObserver = new LogOrderObserver();
+OrderObserver statsObserver = new StatsOrderObserver();
+
+// 3. Register observers with the publisher
+publisher.addObserver(emailObserver);
+publisher.addObserver(logObserver);
+publisher.addObserver(statsObserver);
+
+// 4. Create an order service with the publisher
+OrderService orderService = new OrderService(publisher);
+
+// 5. Ship an order (triggers notifications)
+Order order = new Order("ORD-001");
+orderService.shipOrder(order);
+
+// Output:
+// OrderService: Pedido ORD-001 marcado como ENVIADO.
+// [EMAIL] Pedido ORD-001 enviado. Mandando email al cliente.
+// [LOG] Pedido ORD-001 ha cambiado a estado: ENVIADO
+// [STATS] Contador de pedidos enviados: 1
+```
+
+## Implementation Details
+
+### Observer Storage
+
+The class uses an `ArrayList<OrderObserver>` to store observers, which provides:
+- O(1) time complexity for adding observers
+- O(n) time complexity for removing observers
+- Preservation of registration order during notification
+
+### Notification Pattern
+
+```java
+@Override
+public void notifyOrderShipped(Order order) {
+    for (OrderObserver observer : observers) {
+        observer.onOrderShipped(order);
+    }
+}
+```
+
+The notification uses a simple iteration pattern, calling each observer synchronously.
+
+<Info>
+  This is a concrete implementation of the Subject role in the Observer pattern. It decouples the order system from specific notification mechanisms, allowing observers to be added or removed at runtime.
+</Info>
+
+## Design Pattern Role
+
+This class represents the **Concrete Subject** in the Observer pattern:
+
+- **Implements** the `OrderSubject` interface
+- **Maintains** the list of observers
+- **Sends** notifications to observers when events occur
+- **Provides** dynamic observer management (add/remove)
+
+## Related Components
+
+- [OrderSubject](/api/order-subject) - Interface that this class implements
+- [OrderObserver](/api/order-observer) - Observer interface for registered listeners
+- [OrderService](/api/order-service) - Uses this publisher to trigger notifications
+- [Observers](/api/observers) - Concrete observer implementations that receive events

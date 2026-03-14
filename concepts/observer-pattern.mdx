@@ -1,0 +1,258 @@
+---
+title: 'Observer Pattern Overview'
+description: 'Understanding the Observer design pattern and its implementation in the Order System'
+icon: 'eye'
+---
+
+## What is the Observer Pattern?
+
+The Observer pattern is a behavioral design pattern that defines a **one-to-many dependency** between objects. When one object (the Subject) changes state, all its dependents (Observers) are notified and updated automatically.
+
+<Info>
+  The Observer pattern is also known as the **Publish-Subscribe** or **Event-Listener** pattern.
+</Info>
+
+## Key Components
+
+<Steps>
+  <Step title="Subject (Publisher)">
+    The object being observed that maintains a list of observers and notifies them of state changes.
+  </Step>
+  
+  <Step title="Observer (Subscriber)">
+    The objects that want to be notified when the subject's state changes.
+  </Step>
+  
+  <Step title="Concrete Subject">
+    The actual implementation of the subject interface that manages observers and triggers notifications.
+  </Step>
+  
+  <Step title="Concrete Observers">
+    Specific implementations that define what actions to take when notified.
+  </Step>
+</Steps>
+
+## Why Use the Observer Pattern?
+
+<CardGroup cols={2}>
+  <Card title="Loose Coupling" icon="unlink">
+    The subject doesn't need to know the details of what observers do - it just notifies them.
+  </Card>
+  
+  <Card title="Open/Closed Principle" icon="plus">
+    You can add new observers without modifying existing code.
+  </Card>
+  
+  <Card title="Dynamic Subscriptions" icon="shuffle">
+    Observers can subscribe or unsubscribe at runtime.
+  </Card>
+  
+  <Card title="Event-Driven Design" icon="bolt">
+    Perfect for implementing event handling and notification systems.
+  </Card>
+</CardGroup>
+
+## Pattern Structure
+
+### Subject Interface
+
+The `OrderSubject` interface defines the contract for managing observers:
+
+```java OrderSubject.java
+public interface OrderSubject {
+    void addObserver(OrderObserver observer);
+    void removeObserver(OrderObserver observer);
+    void notifyOrderShipped(Order order);
+}
+```
+
+<Note>
+  The subject interface includes three key methods:
+  - **addObserver**: Register a new observer
+  - **removeObserver**: Unregister an observer
+  - **notifyOrderShipped**: Notify all observers about the event
+</Note>
+
+### Observer Interface
+
+The `OrderObserver` interface defines how observers receive notifications:
+
+```java OrderObserver.java
+public interface OrderObserver {
+    void onOrderShipped(Order order);
+}
+```
+
+This simple interface ensures all observers implement a consistent notification method.
+
+## Implementation in Our Order System
+
+### The Problem
+
+In an e-commerce system, when an order status changes to "SHIPPED", multiple actions must occur:
+
+- Send an email to the customer with tracking information
+- Log the event in an audit trail
+- Update statistics counters for shipped orders
+
+<Warning>
+  **Anti-Pattern Alert**: Don't hard-code these actions in your `OrderService`. This creates tight coupling and makes the code difficult to extend.
+</Warning>
+
+### The Solution
+
+The Observer pattern solves this by:
+
+1. **Decoupling** the order service from notification logic
+2. **Allowing** new observers to be added without modifying existing code
+3. **Enabling** flexible, runtime configuration of which observers are active
+
+## Concrete Implementation
+
+### OrderEventPublisher (Concrete Subject)
+
+This class implements the `OrderSubject` interface and manages the observer list:
+
+```java OrderEventPublisher.java
+public class OrderEventPublisher implements OrderSubject {
+    private final List<OrderObserver> observers = new ArrayList<>();
+
+    @Override
+    public void addObserver(OrderObserver observer) {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(OrderObserver observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyOrderShipped(Order order) {
+        for (OrderObserver observer : observers) {
+            observer.onOrderShipped(order);
+        }
+    }
+}
+```
+
+<Accordion title="How the notification loop works">
+  The `notifyOrderShipped` method iterates through all registered observers and calls their `onOrderShipped` method. This is the heart of the Observer pattern - one event triggers multiple actions.
+  
+  ```java
+  for (OrderObserver observer : observers) {
+      observer.onOrderShipped(order);
+  }
+  ```
+</Accordion>
+
+### Concrete Observers
+
+Each observer implements specific behavior when notified:
+
+<Accordion title="EmailOrderObserver">
+  Handles sending email notifications to customers:
+  
+  ```java EmailOrderObserver.java
+  public class EmailOrderObserver implements OrderObserver {
+      @Override
+      public void onOrderShipped(Order order) {
+          System.out.println("[EMAIL] Pedido " + order.getId() + " enviado. Mandando email al cliente.");
+      }
+  }
+  ```
+</Accordion>
+
+<Accordion title="LogOrderObserver">
+  Records the status change in the audit log:
+  
+  ```java LogOrderObserver.java
+  public class LogOrderObserver implements OrderObserver {
+      @Override
+      public void onOrderShipped(Order order) {
+          System.out.println("[LOG] Pedido " + order.getId() + " ha cambiado a estado: " + order.getStatus());
+      }
+  }
+  ```
+</Accordion>
+
+<Accordion title="StatsOrderObserver">
+  Maintains a counter of shipped orders:
+  
+  ```java StatsOrderObserver.java
+  public class StatsOrderObserver implements OrderObserver {
+      private int totalEnviados = 0;
+
+      @Override
+      public void onOrderShipped(Order order) {
+          totalEnviados++;
+          System.out.println("[STATS] Contador de pedidos enviados: " + totalEnviados);
+      }
+  }
+  ```
+</Accordion>
+
+## Benefits in Practice
+
+<Steps>
+  <Step title="Maintainability">
+    Each observer is a separate class with a single responsibility. Changes to email logic don't affect logging or statistics.
+  </Step>
+  
+  <Step title="Extensibility">
+    Want to add push notifications? Just create a new `PushNotificationObserver` and register it. No changes to `OrderService` needed.
+  </Step>
+  
+  <Step title="Testability">
+    You can test each observer independently and mock the subject for unit tests.
+  </Step>
+  
+  <Step title="Configuration">
+    You can easily enable/disable observers at runtime or configure them differently for different environments.
+  </Step>
+</Steps>
+
+## Common Use Cases
+
+The Observer pattern is widely used in:
+
+- **Event handling systems** (UI frameworks, game engines)
+- **Message queues and pub/sub systems**
+- **Model-View-Controller (MVC)** architectures
+- **Monitoring and logging systems**
+- **Notification services**
+- **Data binding frameworks**
+
+<Info>
+  This pattern is so fundamental that it's built into many programming languages and frameworks (e.g., Java's `Observable`/`Observer`, JavaScript's event listeners, React's state management).
+</Info>
+
+## Trade-offs
+
+<CardGroup cols={2}>
+  <Card title="Advantages" icon="check">
+    - Loose coupling between subject and observers
+    - Easy to add new observers
+    - Supports broadcast communication
+    - Follows Open/Closed Principle
+  </Card>
+  
+  <Card title="Considerations" icon="triangle-exclamation">
+    - Observers are notified in random order
+    - Can lead to unexpected cascading updates
+    - Memory leaks if observers aren't properly unregistered
+    - Performance impact with many observers
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="System Architecture" icon="diagram-project" href="/concepts/architecture">
+    Learn how all components work together in the order system
+  </Card>
+  
+  <Card title="Implementation Guide" icon="code" href="/guide/domain-model">
+    Get started implementing the Observer pattern
+  </Card>
+</CardGroup>

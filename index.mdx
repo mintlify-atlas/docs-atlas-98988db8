@@ -1,97 +1,97 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Observer Pattern Order System"
+description: "A clean Java implementation of the Observer design pattern for e-commerce order event notifications"
 ---
 
-## Setting up
+## Welcome
 
-Get your documentation site up and running in minutes.
+This project demonstrates a production-ready implementation of the Observer design pattern in Java, solving a common e-commerce problem: decoupling order event notifications from core business logic.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
+<CardGroup cols={2}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="Quick Start"
+    icon="rocket"
+    href="/quickstart"
   >
-    Edit your docs locally and preview them in real time.
+    Get started with the Observer pattern in minutes
   </Card>
   <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
+    title="Architecture"
+    icon="diagram-project"
+    href="/concepts/architecture"
   >
-    Customize the design and colors of your site to match your brand.
+    Understand the system design and component relationships
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
+</CardGroup>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card
+    title="Decoupled Architecture"
+    icon="puzzle-piece"
   >
-    Organize your docs to help users find what they need and succeed with your product.
+    Order service remains independent of notification implementations
   </Card>
   <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
+    title="Extensible Design"
+    icon="arrows-split-up-and-left"
   >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+    Add new observers without modifying existing code
   </Card>
   <Card
-    title="Code samples"
+    title="Multiple Observers"
+    icon="users"
+  >
+    Email, logging, and statistics tracking built-in
+  </Card>
+  <Card
+    title="Clean Interfaces"
     icon="code"
-    href="/essentials/code"
   >
-    Add sample code to demonstrate how to use your product.
+    Simple, focused interfaces following SOLID principles
+  </Card>
+</CardGroup>
+
+## The Problem
+
+When an order is marked as "SHIPPED" in an e-commerce system, multiple actions need to occur:
+
+- Send a tracking email to the customer
+- Log the event for audit purposes
+- Update statistics counters
+
+Without the Observer pattern, the `OrderService` would need to know about all these different systems, creating tight coupling and making the code difficult to extend.
+
+## The Solution
+
+This implementation uses the Observer pattern to:
+
+1. **Define a Subject interface** (`OrderSubject`) that manages observers
+2. **Define an Observer interface** (`OrderObserver`) for notifications
+3. **Implement concrete observers** for email, logging, and statistics
+4. **Decouple the service** from notification details
+
+<CardGroup cols={3}>
+  <Card
+    title="Learn the Pattern"
+    icon="book-open"
+    href="/concepts/observer-pattern"
+  >
+    Deep dive into Observer pattern fundamentals
   </Card>
   <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
+    title="Implementation Guide"
+    icon="hammer"
+    href="/guide/domain-model"
   >
-    Display images and other media.
+    Step-by-step implementation walkthrough
   </Card>
   <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
+    title="API Reference"
+    icon="terminal"
+    href="/api/order"
   >
-    Write once and reuse across your docs.
+    Complete API documentation for all components
   </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+</CardGroup>

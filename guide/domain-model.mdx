@@ -1,0 +1,113 @@
+---
+title: 'Domain Model'
+description: 'Creating the Order domain model that represents the core business entity'
+---
+
+## Overview
+
+The domain model is the foundation of our Observer pattern implementation. In this e-commerce order notification system, the `Order` class represents the core business entity that will be observed for state changes.
+
+<Info>
+The domain model is a simple POJO (Plain Old Java Object) that encapsulates the business data without any awareness of the Observer pattern.
+</Info>
+
+## Implementation Steps
+
+<Steps>
+  <Step title="Define the Order Class">
+    Create a simple class to represent an order with essential properties: an identifier and a status.
+    
+    The `Order` class uses Lombok annotations to reduce boilerplate code for getters and setters.
+  </Step>
+  
+  <Step title="Add Core Properties">
+    Define two key properties:
+    - `id`: Unique identifier for the order
+    - `status`: Current state of the order (e.g., "CREADO", "ENVIADO")
+  </Step>
+  
+  <Step title="Initialize with Default State">
+    Create a constructor that sets the initial status to "CREADO" (Created) when a new order is instantiated.
+  </Step>
+</Steps>
+
+## Complete Implementation
+
+```java Order.java
+package patron_observer.marzo_2026_2;
+
+import lombok.Getter;
+import lombok.Setter;
+
+//modelo de dominio
+@Getter
+@Setter
+public class Order {
+
+    private String id;
+    private String status; // "CREADO", "ENVIADO", etc.
+
+    public Order(String id) {
+        this.id = id;
+        this.status = "CREADO";
+    }
+
+}
+```
+
+## Key Design Decisions
+
+<CardGroup cols={2}>
+  <Card title="Lombok Annotations" icon="code">
+    Using `@Getter` and `@Setter` eliminates the need for manual getter/setter methods, keeping the code concise and maintainable.
+  </Card>
+  
+  <Card title="String-Based Status" icon="tag">
+    The status is represented as a String for simplicity. In production, consider using an enum for type safety.
+  </Card>
+  
+  <Card title="Immutable ID" icon="lock">
+    The ID is set only through the constructor, preventing accidental changes to the order identifier.
+  </Card>
+  
+  <Card title="Default State" icon="flag">
+    All orders start in the "CREADO" state, establishing a clear initial condition.
+  </Card>
+</CardGroup>
+
+## Usage Example
+
+```java
+// Create a new order
+Order order = new Order("ORD-001");
+System.out.println(order.getId());     // Output: ORD-001
+System.out.println(order.getStatus()); // Output: CREADO
+
+// Update order status
+order.setStatus("ENVIADO");
+System.out.println(order.getStatus()); // Output: ENVIADO
+```
+
+<Note>
+The Order class has no dependencies on the Observer pattern. It remains a pure domain model that can be used independently of any notification mechanism.
+</Note>
+
+## Status Lifecycle
+
+Typical order status transitions in this system:
+
+1. **CREADO** - Order is created (initial state)
+2. **ENVIADO** - Order is shipped (triggers observer notifications)
+3. Additional states can be added as needed (PROCESANDO, ENTREGADO, CANCELADO, etc.)
+
+<Warning>
+In a production system, consider:
+- Using an enum for status values to prevent invalid states
+- Adding validation to prevent invalid status transitions
+- Including timestamps for status changes
+- Adding more properties (customer info, items, total amount, etc.)
+</Warning>
+
+## Next Steps
+
+Now that we have our domain model, we'll define the Subject interface that will manage observers and notify them when orders are shipped.

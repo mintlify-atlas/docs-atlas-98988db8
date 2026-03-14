@@ -1,0 +1,118 @@
+---
+title: 'Order'
+description: 'Domain model representing an e-commerce order'
+---
+
+## Overview
+
+The `Order` class is the core domain model that represents an e-commerce order in the system. It maintains the order's unique identifier and current status throughout its lifecycle.
+
+## Package
+
+```java
+patron_observer.marzo_2026_2
+```
+
+## Class Definition
+
+```java
+public class Order
+```
+
+## Fields
+
+<ResponseField name="id" type="String">
+  Unique identifier for the order
+</ResponseField>
+
+<ResponseField name="status" type="String">
+  Current status of the order. Common values include:
+  - `"CREADO"` - Order has been created
+  - `"ENVIADO"` - Order has been shipped
+</ResponseField>
+
+## Constructors
+
+### Order(String id)
+
+Creates a new order with the specified ID and initializes its status to "CREADO".
+
+<ParamField path="id" type="String" required>
+  The unique identifier for the order
+</ParamField>
+
+```java
+Order order = new Order("ORD-001");
+// order.getId() returns "ORD-001"
+// order.getStatus() returns "CREADO"
+```
+
+## Methods
+
+### getId()
+
+Retrieves the order's unique identifier.
+
+**Returns:** `String` - The order ID
+
+```java
+String orderId = order.getId();
+```
+
+### setId(String id)
+
+Sets the order's unique identifier.
+
+<ParamField path="id" type="String" required>
+  The new order ID
+</ParamField>
+
+```java
+order.setId("ORD-002");
+```
+
+### getStatus()
+
+Retrieves the current status of the order.
+
+**Returns:** `String` - The current order status
+
+```java
+String status = order.getStatus();
+```
+
+### setStatus(String status)
+
+Updates the order's status.
+
+<ParamField path="status" type="String" required>
+  The new status value (e.g., "ENVIADO", "CREADO")
+</ParamField>
+
+```java
+order.setStatus("ENVIADO");
+```
+
+<Note>
+  This class uses Lombok annotations (`@Getter` and `@Setter`) to automatically generate getter and setter methods for all fields.
+</Note>
+
+## Usage Example
+
+```java
+// Create a new order
+Order order = new Order("ORD-001");
+
+// Check initial status
+System.out.println(order.getStatus()); // Output: CREADO
+
+// Update status
+order.setStatus("ENVIADO");
+System.out.println(order.getStatus()); // Output: ENVIADO
+```
+
+## Related Components
+
+- [OrderService](/api/order-service) - Uses Order objects to manage shipment operations
+- [OrderObserver](/api/order-observer) - Receives notifications about Order state changes
+- [OrderEventPublisher](/api/order-event-publisher) - Publishes Order-related events to observers

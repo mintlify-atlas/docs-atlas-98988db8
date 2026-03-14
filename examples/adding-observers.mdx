@@ -1,0 +1,281 @@
+---
+title: "Adding Custom Observers"
+description: "Learn how to create and register your own observers to extend the notification system"
+---
+
+## Creating a Custom Observer
+
+Adding new functionality to the order notification system is straightforward. You simply create a new class that implements the `OrderObserver` interface.
+
+## The Observer Interface
+
+All observers must implement this simple interface:
+
+```java OrderObserver.java
+package patron_observer.marzo_2026_2;
+
+public interface OrderObserver {
+    void onOrderShipped(Order order);
+}
+```
+
+<Note>
+  The interface has only one method, making it easy to implement new observers without complex contracts.
+</Note>
+
+## Built-in Observer Examples
+
+### Email Observer
+
+Sends email notifications when orders are shipped:
+
+```java EmailOrderObserver.java
+package patron_observer.marzo_2026_2;
+
+public class EmailOrderObserver implements OrderObserver {
+
+    @Override
+    public void onOrderShipped(Order order) {
+        System.out.println("[EMAIL] Pedido " + order.getId() + " enviado. Mandando email al cliente.");
+    }
+}
+```
+
+### Log Observer
+
+Records order status changes to a log:
+
+```java LogOrderObserver.java
+package patron_observer.marzo_2026_2;
+
+public class LogOrderObserver implements OrderObserver {
+
+    @Override
+    public void onOrderShipped(Order order) {
+        System.out.println("[LOG] Pedido " + order.getId() + " ha cambiado a estado: " + order.getStatus());
+    }
+}
+```
+
+### Statistics Observer
+
+Tracks metrics about shipped orders:
+
+```java StatsOrderObserver.java
+package patron_observer.marzo_2026_2;
+
+public class StatsOrderObserver implements OrderObserver {
+
+    private int totalEnviados = 0;
+
+    @Override
+    public void onOrderShipped(Order order) {
+        totalEnviados++;
+        System.out.println("[STATS] Contador de pedidos enviados: " + totalEnviados);
+    }
+}
+```
+
+<Tip>
+  Notice how the `StatsOrderObserver` maintains internal state. Each observer can have its own data and behavior.
+</Tip>
+
+## Step-by-Step: Creating a Custom Observer
+
+<Steps>
+  <Step title="Implement the OrderObserver Interface">
+    Create a new class that implements `OrderObserver`:
+
+    ```java SMSOrderObserver.java
+    package patron_observer.marzo_2026_2;
+
+    public class SMSOrderObserver implements OrderObserver {
+
+        @Override
+        public void onOrderShipped(Order order) {
+            // Your custom logic here
+            sendSMS(order);
+        }
+
+        private void sendSMS(Order order) {
+            System.out.println("[SMS] Sending text message for order " + order.getId());
+            // Integration with SMS service would go here
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Instantiate Your Observer">
+    Create an instance of your custom observer:
+
+    ```java
+    OrderObserver smsObserver = new SMSOrderObserver();
+    ```
+  </Step>
+
+  <Step title="Register with the Publisher">
+    Add your observer to the event publisher:
+
+    ```java
+    publisher.addObserver(smsObserver);
+    ```
+
+    That's it! Your observer will now receive notifications automatically.
+  </Step>
+</Steps>
+
+## Advanced Observer Examples
+
+### Observer with External Dependencies
+
+```java
+public class DatabaseOrderObserver implements OrderObserver {
+    
+    private final DatabaseService database;
+    
+    public DatabaseOrderObserver(DatabaseService database) {
+        this.database = database;
+    }
+    
+    @Override
+    public void onOrderShipped(Order order) {
+        database.saveOrderEvent(order.getId(), "SHIPPED", LocalDateTime.now());
+        System.out.println("[DB] Order " + order.getId() + " event saved to database");
+    }
+}
+```
+
+### Observer with Configuration
+
+```java
+public class NotificationObserver implements OrderObserver {
+    
+    private final boolean emailEnabled;
+    private final boolean smsEnabled;
+    
+    public NotificationObserver(boolean emailEnabled, boolean smsEnabled) {
+        this.emailEnabled = emailEnabled;
+        this.smsEnabled = smsEnabled;
+    }
+    
+    @Override
+    public void onOrderShipped(Order order) {
+        if (emailEnabled) {
+            sendEmail(order);
+        }
+        if (smsEnabled) {
+            sendSMS(order);
+        }
+    }
+    
+    private void sendEmail(Order order) {
+        System.out.println("[NOTIFICATION] Email sent for " + order.getId());
+    }
+    
+    private void sendSMS(Order order) {
+        System.out.println("[NOTIFICATION] SMS sent for " + order.getId());
+    }
+}
+```
+
+### Observer with Error Handling
+
+```java
+public class ResilientEmailObserver implements OrderObserver {
+    
+    @Override
+    public void onOrderShipped(Order order) {
+        try {
+            sendEmail(order);
+        } catch (Exception e) {
+            System.err.println("[EMAIL] Failed to send email for " + order.getId() + ": " + e.getMessage());
+            // Log error or add to retry queue
+        }
+    }
+    
+    private void sendEmail(Order order) throws Exception {
+        // Email sending logic that might fail
+    }
+}
+```
+
+<Note>
+  It's a good practice to handle exceptions within observers so that a failure in one observer doesn't prevent other observers from being notified.
+</Note>
+
+## Complete Example
+
+Here's how to add multiple custom observers to your system:
+
+```java
+public class AppMainExtended {
+
+    public static void main(String[] args) {
+        // Create publisher
+        OrderSubject publisher = new OrderEventPublisher();
+
+        // Add built-in observers
+        publisher.addObserver(new EmailOrderObserver());
+        publisher.addObserver(new LogOrderObserver());
+        publisher.addObserver(new StatsOrderObserver());
+
+        // Add custom observers
+        publisher.addObserver(new SMSOrderObserver());
+        publisher.addObserver(new DatabaseOrderObserver(databaseService));
+        publisher.addObserver(new NotificationObserver(true, true));
+
+        // Create service and process order
+        OrderService orderService = new OrderService(publisher);
+        Order order = new Order("ORD-001");
+        orderService.shipOrder(order);
+    }
+}
+```
+
+## Dynamic Observer Management
+
+You can add and remove observers at runtime:
+
+```java
+// Add an observer
+OrderObserver tempObserver = new DebugOrderObserver();
+publisher.addObserver(tempObserver);
+
+// Process some orders...
+orderService.shipOrder(order1);
+
+// Remove the observer
+publisher.removeObserver(tempObserver);
+
+// This order won't trigger the debug observer
+orderService.shipOrder(order2);
+```
+
+<Tip>
+  Dynamic observer management is useful for temporary monitoring, A/B testing, or feature flags.
+</Tip>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep Observers Focused" icon="bullseye">
+    Each observer should have a single, clear responsibility. Don't create observers that do too many things.
+  </Card>
+  
+  <Card title="Handle Errors Gracefully" icon="shield">
+    Always include try-catch blocks to prevent one failing observer from affecting others.
+  </Card>
+  
+  <Card title="Avoid Side Effects" icon="exclamation-triangle">
+    Observers should not modify the order object or call back to the publisher during notification.
+  </Card>
+  
+  <Card title="Consider Performance" icon="gauge-high">
+    If an observer performs heavy operations, consider using async processing or queuing.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+- Review the [basic usage example](/examples/basic-usage)
+- Explore [real-world use cases](/examples/use-cases) for the Observer Pattern
